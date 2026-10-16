@@ -36,3 +36,11 @@ body {
   height: auto;
   display: block;
 }
+
+.google-login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 0 auto;
+}

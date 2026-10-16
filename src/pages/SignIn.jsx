@@ -113,6 +113,7 @@ function SignIn({ onAuthSuccess }) {
   <span>or</span>
 </div>
 
+<div className="google-login-wrapper">
 <GoogleLogin
   onSuccess={async (credentialResponse) => {
     try {
@@ -136,6 +137,7 @@ function SignIn({ onAuthSuccess }) {
     setError("Google sign-in failed. Please try again.")
   }}
 />
+</div>
 
         </form>
 
