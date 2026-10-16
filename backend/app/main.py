@@ -16,7 +16,9 @@ app = FastAPI(title="SignWyz API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_url],
+    allow_origins=[
+        "https://signwyz.vercel.app",
+        "http://localhost:5173",],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
