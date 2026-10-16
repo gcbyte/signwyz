@@ -12,7 +12,7 @@ from .routers import auth, documents, users
 # instead of relying on this.
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Contract Reader API")
+app = FastAPI(title="SignWyz API")
 
 app.add_middleware(
     CORSMiddleware,
