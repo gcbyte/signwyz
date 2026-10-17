@@ -15,9 +15,11 @@ function Navbar({ darkMode, setDarkMode, isAuthenticated, onLogout }) {
 
   const navLinkClass = ({ isActive }) => (isActive ? "active" : "")
 
+  const logoDestination = isAuthenticated ? "/dashboard" : "/"
+
   return (
     <nav className="navbar">
-      <Link to="/" className="logo" onClick={closeMobile}>
+      <Link to={logoDestination} className="logo" onClick={closeMobile}>
       <img
        src="/signwyz-logo.png"
        alt="SignWyz"
