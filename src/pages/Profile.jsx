@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react"
-import { apiRequest, API_BASE_URL } from "../api"
+import { useRef, useState } from "react"
+import { apiRequest, apiUpload, API_BASE_URL } from "../api"
+import { useAuth } from "../context/AuthContext"
 
 
 function Profile() {
-  const [user, setUser] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { user, isLoadingUser, updateUser } = useAuth()
+
   const [avatarError, setAvatarError] = useState("")
 
   const [isEditing, setIsEditing] = useState(false)
@@ -14,15 +15,6 @@ function Profile() {
   const [saveError, setSaveError] = useState("")
 
   const fileInputRef = useRef(null)
-
-
-
-  useEffect(() => {
-    apiRequest("/users/me")
-      .then(setUser)
-      .catch(() => setUser(null))
-      .finally(() => setIsLoading(false))
-  }, [])
 
   const firstName = user?.first_name || ""
   const lastName = user?.last_name || ""
@@ -40,20 +32,8 @@ function Profile() {
     formData.append("file", file)
 
     try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${API_BASE_URL}/users/me/avatar`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}))
-        throw new Error(errorBody.detail || "Upload failed.")
-      }
-
-      const updatedUser = await response.json()
-      setUser(updatedUser)
+      const updatedUser = await apiUpload("/users/me/avatar", formData)
+      updateUser(updatedUser)
     } catch (err) {
       setAvatarError(err.message)
     }
@@ -62,7 +42,7 @@ function Profile() {
   const handleRemoveAvatar = async () => {
     try {
       const updatedUser = await apiRequest("/users/me/avatar", { method: "DELETE" })
-      setUser(updatedUser)
+      updateUser(updatedUser)
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -71,44 +51,40 @@ function Profile() {
     }
   }
 
-  
-
   const startEditing = () => {
-  setEditFirstName(firstName)
-  setEditLastName(lastName)
-  setSaveError("")
-  setIsEditing(true)
-}
-
-
-
-const handleSaveProfile = async () => {
-  if (!editFirstName.trim() || !editLastName.trim()) {
-    setSaveError("First and last name can't be empty.")
-    return
+    setEditFirstName(firstName)
+    setEditLastName(lastName)
+    setSaveError("")
+    setIsEditing(true)
   }
 
-  setIsSaving(true)
-  setSaveError("")
+  const handleSaveProfile = async () => {
+    if (!editFirstName.trim() || !editLastName.trim()) {
+      setSaveError("First and last name can't be empty.")
+      return
+    }
 
-  try {
-    const updatedUser = await apiRequest("/users/me", {
-      method: "PATCH",
-      body: JSON.stringify({
-        first_name: editFirstName,
-        last_name: editLastName,
-      }),
-    })
-    setUser(updatedUser)
-    setIsEditing(false)
-  } catch (err) {
-    setSaveError(err.message)
-  } finally {
-    setIsSaving(false)
+    setIsSaving(true)
+    setSaveError("")
+
+    try {
+      const updatedUser = await apiRequest("/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          first_name: editFirstName,
+          last_name: editLastName,
+        }),
+      })
+      updateUser(updatedUser)
+      setIsEditing(false)
+    } catch (err) {
+      setSaveError(err.message)
+    } finally {
+      setIsSaving(false)
+    }
   }
-}
 
-  if (isLoading) {
+  if (isLoadingUser) {
     return (
       <div className="profile-page">
         <div className="profile-container">
@@ -178,90 +154,90 @@ const handleSaveProfile = async () => {
 
           <div className="profile-info">
 
-  {!user && (
-    <p className="profile-field-empty">
-      We couldn't load your profile. Please try signing in again.
-    </p>
-  )}
+            {!user && (
+              <p className="profile-field-empty">
+                We couldn't load your profile. Please try signing in again.
+              </p>
+            )}
 
-  {isEditing ? (
-    <>
-      <div className="profile-field">
-        <span>First Name</span>
-        <input
-          type="text"
-          value={editFirstName}
-          onChange={(e) => setEditFirstName(e.target.value)}
-          className="profile-edit-input"
-        />
-      </div>
+            {isEditing ? (
+              <>
+                <div className="profile-field">
+                  <span>First Name</span>
+                  <input
+                    type="text"
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    className="profile-edit-input"
+                  />
+                </div>
 
-      <div className="profile-field">
-        <span>Last Name</span>
-        <input
-          type="text"
-          value={editLastName}
-          onChange={(e) => setEditLastName(e.target.value)}
-          className="profile-edit-input"
-        />
-      </div>
+                <div className="profile-field">
+                  <span>Last Name</span>
+                  <input
+                    type="text"
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    className="profile-edit-input"
+                  />
+                </div>
 
-      <div className="profile-field">
-        <span>Email Address</span>
-        <p>{email || "—"}</p>
-      </div>
+                <div className="profile-field">
+                  <span>Email Address</span>
+                  <p>{email || "—"}</p>
+                </div>
 
-      {saveError && <p className="file-error">{saveError}</p>}
+                {saveError && <p className="file-error">{saveError}</p>}
 
-      <div className="profile-edit-actions">
-        <button
-          type="button"
-          className="profile-avatar-upload"
-          onClick={handleSaveProfile}
-          disabled={isSaving}
-        >
-          {isSaving ? "Saving..." : "Save"}
-        </button>
-        <button
-          type="button"
-          className="profile-avatar-remove"
-          onClick={() => setIsEditing(false)}
-          disabled={isSaving}
-        >
-          Cancel
-        </button>
-      </div>
-    </>
-  ) : (
-    <>
-      <div className="profile-field">
-        <span>First Name</span>
-        <p>{firstName || "—"}</p>
-      </div>
+                <div className="profile-edit-actions">
+                  <button
+                    type="button"
+                    className="profile-avatar-upload"
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    className="profile-avatar-remove"
+                    onClick={() => setIsEditing(false)}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="profile-field">
+                  <span>First Name</span>
+                  <p>{firstName || "—"}</p>
+                </div>
 
-      <div className="profile-field">
-        <span>Last Name</span>
-        <p>{lastName || "—"}</p>
-      </div>
+                <div className="profile-field">
+                  <span>Last Name</span>
+                  <p>{lastName || "—"}</p>
+                </div>
 
-      <div className="profile-field">
-        <span>Email Address</span>
-        <p>{email || "—"}</p>
-      </div>
+                <div className="profile-field">
+                  <span>Email Address</span>
+                  <p>{email || "—"}</p>
+                </div>
 
-      {user && (
-        <button
-          type="button"
-          className="profile-avatar-upload"
-          onClick={startEditing}
-        >
-          Edit Profile
-        </button>
-      )}
-    </>
-  )}
+                {user && (
+                  <button
+                    type="button"
+                    className="profile-avatar-upload"
+                    onClick={startEditing}
+                  >
+                    Edit Profile
+                  </button>
+                )}
+              </>
+            )}
 
-</div>
+          </div>
 
         </section>
 

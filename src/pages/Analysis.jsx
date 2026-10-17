@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { apiRequest } from "../api"
 
 function Analysis() {
 
-  const location = useLocation()
+  const { id: documentId } = useParams()
   const navigate = useNavigate()
-
-  const { documentId } = location.state || {}
 
   const [document, setDocument] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -31,10 +29,10 @@ function Analysis() {
         <div className="analysis-container">
           <div className="analysis-header">
             <p className="analysis-label">ANALYSIS RESULTS</p>
-            <h1>No document to analyze.</h1>
+            <h1>Invalid link.</h1>
             <p>
-              We couldn't find a document to analyze.
-              Please return to the dashboard and provide a document.
+              This URL doesn't include a document ID.
+              Please return to the dashboard and analyze a document.
             </p>
           </div>
           <button className="analyze-button" onClick={() => navigate("/dashboard")}>

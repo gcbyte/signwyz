@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Routes, Route, Navigate, useLocation } from "react-router-dom"
 import "./App.css"
+
+import { useAuth } from "./context/AuthContext"
 
 import Navbar from "./components/Navbar"
 import LandingPage from "./pages/LandingPage"
@@ -14,11 +16,11 @@ import ForgotPassword from "./pages/ForgotPassword"
 import ResetPassword from "./pages/ResetPassword"
 import NotFound from "./pages/NotFound"
 
-function getStoredAuth() {
-  return Boolean(localStorage.getItem("token"))
-}
+// Routes where the Navbar should not appear
+const NAVBAR_HIDDEN_ROUTES = new Set(["/analysis"])
 
-function ProtectedRoute({ isAuthenticated, children }) {
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuth()
   return isAuthenticated ? children : <Navigate to="/signin" replace />
 }
 
@@ -26,51 +28,38 @@ function App() {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark"
   })
-  const [isAuthenticated, setIsAuthenticated] = useState(getStoredAuth)
+
+  const { isAuthenticated, logout } = useAuth()
   const location = useLocation()
 
-  // Keep auth state in sync if it changes in another tab
-  useEffect(() => {
-    const handleStorage = () => setIsAuthenticated(getStoredAuth())
-    window.addEventListener("storage", handleStorage)
-    return () => window.removeEventListener("storage", handleStorage)
-  }, [])
-
-  useEffect(() => {
-    localStorage.setItem("theme", darkMode ? "dark" : "light")
-  }, [darkMode])
-
-  const handleLogout = () => {
-    localStorage.removeItem("token")
-    setIsAuthenticated(false)
+  const handleDarkModeChange = (value) => {
+    localStorage.setItem("theme", value ? "dark" : "light")
+    setDarkMode(value)
   }
+
+  const showNavbar = !NAVBAR_HIDDEN_ROUTES.has(location.pathname)
 
   return (
     <div className={darkMode ? "app dark-mode" : "app"}>
 
-      {location.pathname !== "/analysis" && (
+      {showNavbar && (
         <Navbar
           darkMode={darkMode}
-          setDarkMode={setDarkMode}
+          setDarkMode={handleDarkModeChange}
           isAuthenticated={isAuthenticated}
-          onLogout={handleLogout}
+          onLogout={logout}
         />
       )}
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route
-          path="/signup"
-          element={<SignUp onAuthSuccess={() => setIsAuthenticated(true)} />}
-        />
-        <Route
-          path="/signin"
-          element={<SignIn onAuthSuccess={() => setIsAuthenticated(true)} />}
-        />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/signin" element={<SignIn />} />
+
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           }
@@ -78,7 +67,7 @@ function App() {
         <Route
           path="/documents"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ProtectedRoute>
               <Documents />
             </ProtectedRoute>
           }
@@ -86,19 +75,20 @@ function App() {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/analysis"
+          path="/analysis/:id"
           element={
-            <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ProtectedRoute>
               <Analysis />
             </ProtectedRoute>
           }
         />
+
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />

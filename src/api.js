@@ -37,4 +37,30 @@ async function apiRequest(path, options = {}) {
   return response.json()
 }
 
-export { apiRequest, API_BASE_URL }
+/**
+ * Multipart/form-data upload wrapper. Omits Content-Type so the browser
+ * sets the correct multipart boundary automatically.
+ */
+async function apiUpload(path, formData) {
+  const token = localStorage.getItem("token")
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  })
+
+  if (response.status === 401) {
+    handleSessionExpired()
+    throw new Error("Your session has expired. Please sign in again.")
+  }
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}))
+    throw new Error(errorBody.detail || "Something went wrong. Please try again.")
+  }
+
+  return response.json()
+}
+
+export { apiRequest, apiUpload, API_BASE_URL }
