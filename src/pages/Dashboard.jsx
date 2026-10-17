@@ -1,27 +1,15 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import * as pdfjsLib from "pdfjs-dist"
 import { apiRequest } from "../api"
-import mammoth from "mammoth"
-
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
-).toString()
+import { useAuth } from "../context/AuthContext"
+import { extractTextFromFile } from "../utils/fileParser"
 
 
 function Dashboard() {
 
   const navigate = useNavigate()
-
-  const [firstName, setFirstName] = useState("")
-
-  useEffect(() => {
-    apiRequest("/users/me")
-      .then((user) => setFirstName(user.first_name))
-      .catch(() => setFirstName(""))
-  }, [])
+  const { user } = useAuth()
+  const firstName = user?.first_name || ""
 
   const [selectedType, setSelectedType] = useState("")
   const [selectedFile, setSelectedFile] = useState(null)
@@ -43,114 +31,32 @@ function Dashboard() {
     setSelectedFile(file)
     setFileText("")
 
-    if (file.type === "text/plain") {
-
-      const reader = new FileReader()
-
-      reader.onload = (event) => {
-        setFileText(event.target.result)
-      }
-
-      reader.onerror = () => {
-        setError("We could not read this file. Please try another.")
-      }
-
-      reader.readAsText(file)
-
-      return
+    try {
+      const text = await extractTextFromFile(file)
+      setFileText(text)
+    } catch (err) {
+      setError(err.message)
+      setFileText("")
     }
-
-
-    if (file.type === "application/pdf") {
-
-      try {
-
-        const arrayBuffer = await file.arrayBuffer()
-
-        const pdf = await pdfjsLib.getDocument({
-          data: arrayBuffer
-        }).promise
-
-        let extractedText = ""
-
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-
-          const page = await pdf.getPage(pageNumber)
-
-          const textContent = await page.getTextContent()
-
-          const pageText = textContent.items
-            .map((item) => item.str)
-            .join(" ")
-
-          extractedText += pageText + "\n"
-        }
-
-        setFileText(extractedText)
-
-      } catch (error) {
-
-        setError("We could not read this PDF. Please try another file.")
-        setFileText("")
-
-      }
-
-      return
-    }
-
-
-    // Word documents (.doc/.docx) are accepted by the file input but we
-    // don't have a client-side parser for them yet — tell the user instead
-    // of silently doing nothing.
-    if (
-  file.type ===
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-) {
-
-  try {
-
-    const arrayBuffer = await file.arrayBuffer()
-    const result = await mammoth.extractRawText({ arrayBuffer })
-    setFileText(result.value)
-
-  } catch (error) {
-
-    setError("We could not read this Word document. Please try another file.")
-    setFileText("")
-
-  }
-
-  return
-}
-
- setError(
-  "Old-format .doc files aren't supported. Please save it as .docx, upload a PDF or .txt file, or paste the text below."
-)
   }
 
 
   const handleAnalyze = async () => {
 
     if (!selectedType) {
-      alert("Please select a document type.")
+      setError("Please select a document type.")
       return
     }
 
     if (!selectedFile && !documentText.trim()) {
-      alert("Please upload a document or paste your document text.")
+      setError("Please upload a document or paste your document text.")
       return
     }
 
-    let textToAnalyze = ""
+    const textToAnalyze = fileText.trim() || documentText.trim()
 
-    if (fileText.trim()) {
-      textToAnalyze = fileText
-    } else if (documentText.trim()) {
-      textToAnalyze = documentText
-    }
-
-    if (!textToAnalyze.trim()) {
-      alert("We could not read any text from this document.")
+    if (!textToAnalyze) {
+      setError("We could not read any text from this document.")
       return
     }
 
@@ -168,11 +74,7 @@ function Dashboard() {
         }),
       })
 
-      navigate("/analysis", {
-        state: {
-          documentId: savedDocument.id,
-        },
-      })
+      navigate(`/analysis/${savedDocument.id}`)
 
     } catch (err) {
 

@@ -18,11 +18,7 @@ function Documents() {
   }, [])
 
   const openDocument = (document) => {
-    navigate("/analysis", {
-      state: {
-        documentId: document.id
-      }
-    })
+    navigate(`/analysis/${document.id}`)
   }
 
   if (isLoading) {

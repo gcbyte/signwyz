@@ -1,11 +1,14 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
-import { GoogleLogin } from "@react-oauth/google"
 import { apiRequest } from "../api"
+import { useAuth } from "../context/AuthContext"
+import GoogleAuthButton from "../components/GoogleAuthButton"
 
-function SignIn({ onAuthSuccess }) {
+function SignIn() {
   const navigate = useNavigate()
+  const { login } = useAuth()
+
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -13,31 +16,30 @@ function SignIn({ onAuthSuccess }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (event) => {
-  event.preventDefault()
-  setError("")
+    event.preventDefault()
+    setError("")
 
-  if (!email.trim() || !password.trim()) {
-    setError("Please enter your email and password.")
-    return
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter your email and password.")
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const data = await apiRequest("/auth/signin", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      })
+
+      login(data.access_token)
+      navigate("/dashboard")
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
-  setIsSubmitting(true)
-
-  try {
-    const data = await apiRequest("/auth/signin", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    })
-
-    localStorage.setItem("token", data.access_token)
-    onAuthSuccess?.()
-    navigate("/dashboard")
-  } catch (err) {
-    setError(err.message)
-  } finally {
-    setIsSubmitting(false)
-  }
-}
 
   return (
 
@@ -108,36 +110,14 @@ function SignIn({ onAuthSuccess }) {
           <button type="submit" className="signin-button" disabled={isSubmitting}>
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
-          
+
           <div className="google-divider">
-  <span>or</span>
-</div>
+            <span>or</span>
+          </div>
 
-<div className="google-login-wrapper">
-<GoogleLogin
-  onSuccess={async (credentialResponse) => {
-    try {
-      setError("")
-
-      const data = await apiRequest("/auth/google", {
-        method: "POST",
-        body: JSON.stringify({
-          credential: credentialResponse.credential,
-        }),
-      })
-
-      localStorage.setItem("token", data.access_token)
-      onAuthSuccess?.()
-      navigate("/dashboard")
-    } catch (err) {
-      setError(err.message)
-    }
-  }}
-  onError={() => {
-    setError("Google sign-in failed. Please try again.")
-  }}
-/>
-</div>
+          <div className="google-login-wrapper">
+            <GoogleAuthButton onError={setError} />
+          </div>
 
         </form>
 

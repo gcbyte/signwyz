@@ -49,11 +49,6 @@ function Navbar({ darkMode, setDarkMode, isAuthenticated, onLogout }) {
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/analysis" className={navLinkClass} onClick={closeMobile}>
-                  Analysis
-                </NavLink>
-              </li>
-              <li>
                 <NavLink to="/profile" className={navLinkClass} onClick={closeMobile}>
                   Profile
                 </NavLink>

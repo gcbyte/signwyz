@@ -1,11 +1,14 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
-import { GoogleLogin } from "@react-oauth/google"
 import { apiRequest } from "../api"
+import { useAuth } from "../context/AuthContext"
+import GoogleAuthButton from "../components/GoogleAuthButton"
 
-function SignUp({ onAuthSuccess }) {
+function SignUp() {
   const navigate = useNavigate()
+  const { login } = useAuth()
+
   const [showPassword, setShowPassword] = useState(false)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -18,38 +21,37 @@ function SignUp({ onAuthSuccess }) {
     event.preventDefault()
     setError("")
 
-  if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
-    setError("Please fill in all fields.")
-    return
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
+      setError("Please fill in all fields.")
+      return
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.")
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const data = await apiRequest("/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          password,
+        }),
+      })
+
+      login(data.access_token)
+      navigate("/dashboard")
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
-
-  if (password.length < 8) {
-    setError("Password must be at least 8 characters.")
-    return
-  }
-
-  setIsSubmitting(true)
-
-  try {
-    const data = await apiRequest("/auth/signup", {
-      method: "POST",
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        password,
-      }),
-    })
-
-    localStorage.setItem("token", data.access_token)
-    onAuthSuccess?.()
-    navigate("/dashboard")
-  } catch (err) {
-    setError(err.message)
-  } finally {
-    setIsSubmitting(false)
-  }
-}
 
   return (
 
@@ -144,34 +146,12 @@ function SignUp({ onAuthSuccess }) {
           </button>
 
           <div className="google-divider">
-  <span>or</span>
-</div>
+            <span>or</span>
+          </div>
 
-<div className="google-login-wrapper">
-<GoogleLogin
-  onSuccess={async (credentialResponse) => {
-    try {
-      setError("")
-
-      const data = await apiRequest("/auth/google", {
-        method: "POST",
-        body: JSON.stringify({
-          credential: credentialResponse.credential,
-        }),
-      })
-
-      localStorage.setItem("token", data.access_token)
-      onAuthSuccess?.()
-      navigate("/dashboard")
-    } catch (err) {
-      setError(err.message)
-    }
-  }}
-  onError={() => {
-    setError("Google sign-up failed. Please try again.")
-  }}
-/>
-</div>
+          <div className="google-login-wrapper">
+            <GoogleAuthButton onError={setError} />
+          </div>
 
         </form>
 
