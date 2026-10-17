@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     gemini_api_key: str | None = None
     google_client_id: str | None = None
+    resend_api_key: str | None = None
+    email_from: str = "SignWyz <noreply@signwyz.vercel.app>"
 
     class Config:
         env_file = ".env"

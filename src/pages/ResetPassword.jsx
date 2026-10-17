@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { Eye, EyeOff } from "lucide-react"
+import { apiRequest } from "../api"
 
 function ResetPassword() {
 
@@ -15,7 +16,7 @@ function ResetPassword() {
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     setError("")
 
@@ -36,18 +37,19 @@ function ResetPassword() {
 
     setIsSubmitting(true)
 
-    // TODO: replace with a real request once a backend exists, e.g.:
-    //   await fetch("/api/reset-password", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ token, password })
-    //   })
-    // The backend should verify the token is valid and not expired/used
-    // before actually changing the password.
-    setTimeout(() => {
+    try {
+      await apiRequest("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token, new_password: password }),
+      })
+      navigate("/signin", {
+        state: { message: "Password reset. You can now sign in with your new password." },
+      })
+    } catch (err) {
+      setError(err.message)
+    } finally {
       setIsSubmitting(false)
-      navigate("/signin")
-    }, 600)
+    }
   }
 
   if (!token) {
@@ -146,20 +148,10 @@ function ResetPassword() {
             <button
               type="button"
               className="password-toggle"
-              onClick={() =>
-                setShowConfirmPassword(!showConfirmPassword)
-              }
-              aria-label={
-                showConfirmPassword
-                  ? "Hide password"
-                  : "Show password"
-              }
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
             >
-              {showConfirmPassword ? (
-                <EyeOff size={18} />
-              ) : (
-                <Eye size={18} />
-              )}
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
 
           </div>

@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import { apiRequest } from "../api"
 
 function ForgotPassword() {
 
@@ -8,7 +9,7 @@ function ForgotPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSent, setIsSent] = useState(false)
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     setError("")
 
@@ -19,19 +20,18 @@ function ForgotPassword() {
 
     setIsSubmitting(true)
 
-    // TODO: replace with a real request once a backend exists, e.g.:
-    //   await fetch("/api/forgot-password", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ email })
-    //   })
-    // The backend should generate a real, single-use, expiring token and
-    // email a link like /reset-password?token=<token> — it should NOT
-    // reveal whether the email is registered (see the message below).
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      await apiRequest("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      })
       setIsSent(true)
-    }, 600)
+    } catch (err) {
+      // Show a generic message — don't reveal whether the email exists
+      setIsSent(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

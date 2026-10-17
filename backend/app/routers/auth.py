@@ -14,6 +14,7 @@ from ..security import (
     verify_password,
     verify_google_token,
 )
+from ..services.email_service import send_password_reset_email
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -76,8 +77,7 @@ def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depend
         db.commit()
 
         reset_link = f"{settings.frontend_url}/reset-password?token={token}"
-
-        print(f"[password reset] Send this link to {user.email}: {reset_link}")
+        send_password_reset_email(to_email=user.email, reset_link=reset_link)
 
     return {"message": "If that email is registered, a reset link has been sent."}
 

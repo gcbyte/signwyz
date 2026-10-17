@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useLocation } from "react-router-dom"
 import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
 import { apiRequest } from "../api"
@@ -8,12 +8,16 @@ import GoogleAuthButton from "../components/GoogleAuthButton"
 function SignIn() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const location = useLocation()
 
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Show a success message if redirected here after a password reset
+  const successMessage = location.state?.message || ""
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -97,6 +101,8 @@ function SignIn() {
             </button>
 
           </div>
+
+          {successMessage && <p className="selected-file">{successMessage}</p>}
 
           {error && <p className="file-error">{error}</p>}
 
