@@ -868,6 +868,13 @@
   color: #4b5563;
 }
 
+@media (max-width: 768px) {
+  .document-preview p {
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+
 
 .risk-summary {
   padding: 35px;
@@ -1570,8 +1577,8 @@
   }
 
   .hero h1 {
-    font-size: 48px;
-    letter-spacing: -2px;
+    font-size: 42px;
+    letter-spacing: -1.5px;
   }
 
   .hero-description {
@@ -1619,7 +1626,7 @@
 
 
   .signup-page {
-    padding: 40px 20px;
+    padding: 40px 20px 60px;
     align-items: flex-start;
   }
 
@@ -1638,7 +1645,8 @@
 
 
   .analysis-header h1 {
-    font-size: 38px;
+    font-size: 32px;
+    letter-spacing: -1px;
   }
 
   .risk-levels {
@@ -1652,6 +1660,56 @@
 
   .finding-card {
     padding: 22px;
+  }
+
+  /* Dashboard */
+  .dashboard-page {
+    padding: 40px 16px 60px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 32px;
+    letter-spacing: -1px;
+  }
+
+  /* Documents */
+  .documents-page {
+    padding: 32px 16px 40px;
+  }
+
+  /* Profile */
+  .profile-page {
+    padding: 32px 16px 60px;
+  }
+
+  .profile-card {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .profile-avatar-section {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .profile-avatar-actions {
+    align-items: flex-start;
+  }
+
+}
+
+/* Extra-small phones (iPhone SE, Galaxy A series) */
+@media (max-width: 380px) {
+  .hero h1 {
+    font-size: 36px;
+    letter-spacing: -1px;
+  }
+
+  .signup-header h1,
+  .signin-header h1 {
+    font-size: 30px;
   }
 }
 
